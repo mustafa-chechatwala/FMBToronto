@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FMB Distribution Management</title>
+
+<style>
+body {
+  font-family: system-ui;
+  padding: 15px;
+  background: #f5f5f5;
+}
+.card {
+  background: #fff;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+button {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #0a7cff;
+  color: #fff;
+  font-size: 14px;
+}
+button:disabled { background: #aaa; }
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+.radio-group {
+  display: flex;
+  gap: 15px;
+  margin: 8px 0;
+}
+.pagination {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 15px 0;
+}
+</style>
+</head>
+
+<body>
+
+<h3>FMB Toronto: Distribution Details</h3>
+
+<hr />
+<label for="user" style="color: red;">*Please enter user email:</label>
+<input id="user" placeholder="Your email for authentication" style="width:100%; max-width:350px;">
+<hr />
+
+<fieldset>
+    <legend>Select your depot:</legend>
+    <div>
+      <input type="radio" id="saifeeMasjid" name="depot" value="Masjid us Saifee - Richmond Hill">
+      <label for="saifeeMasjid">Masjid us Saifee - Richmond Hill</label>
+    </div>
+    <div>
+      <input type="radio" id="markham" name="depot" value="Markham">
+      <label for="markham">Markham</label>
+    </div>
+    <div>
+      <input type="radio" id="durham" name="depot" value="Durham">
+      <label for="durham">Durham</label>
+    </div>
+    <div>
+      <input type="radio" id="barrie" name="depot" value="Barrie">
+      <label for="barrie">Barrie</label>
+    </div>
+    <div>
+      <input type="radio" id="sudbury" name="depot" value="Sudbury">
+      <label for="sudbury">Sudbury</label>
+    </div>
+    <div>
+      <input type="radio" id="all" name="depot" value="All" checked>
+      <label for="all">All</label>
+    </div>
+  </fieldset>
+
+<div id="stats" style="
+  background:#fff;
+  padding:10px;
+  margin:10px 0;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+  text-align:center;
+  font-weight:600;
+">
+	<div id="statsCount"></div>
+	<br />
+	<button onclick="getStats()">Click this button for latest Stats</button>
+</div>
+
+<div id="query" class="radio-group">
+
+<label for="query">Choose search option: </label>
+  <label><input type="radio" name="field" value="JamaatID_ITS" checked> JamaatID/ITS</label>
+  <label><input type="radio" name="field" value="Name"> Name</label>
+</div>
+
+<input id="value" placeholder="Search (leave blank to list all)" style="width:100%; max-width:350px;">
+<button onclick="search(1)">Search</button>
+
+<div id="results"></div>
+
+<div class="pagination" id="pager"></div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbxlv4jyt9oUvWW_W6QmmlHUIBVTXxa5rpIUrsaSKvdkQ2HU3yxAu95hu2n4bhwkx-EO-w/exec";
+let currentPage = 1;
+let lastPage = 1;
+
+function getField() {
+  return document.querySelector('input[name="field"]:checked').value;
+}
+
+function getStats() {
+	document.getElementById("statsCount").innerHTML = `⌛`;
+
+  const user = document.getElementById("user").value;
+  if (!user) {
+	document.getElementById("statsCount").innerHTML = `
+		  <p style="color: red;">Please enter user email</p>
+		`;
+		return;
+  }
+  
+  const rdepot = document.querySelector('input[name="depot"]:checked')?.value;
+
+  fetch(`${API}?action=getstats&user=${encodeURIComponent(user)}&rdepot=${encodeURIComponent(rdepot)}`)
+    .then(r => r.json())
+    .then(d => {
+		if (d.error === "Unauthorized") {
+		document.body.innerHTML = `
+		  <h2>Access Denied</h2>
+		  <p>You are not authorized to use this app.</p>
+		  <p>Please sign in with an approved Google account.</p>
+		`;
+		return;
+	  }
+	  	if (d.error === "Missing user email") {
+		document.getElementById("statsCount").innerHTML = `
+		  <p style="color: red;">Please enter user email</p>
+		`;
+		return;
+	  }
+	  
+	  let totalCount = 0;
+	  let totalGiven = 0;
+	  let totalPending = 0;
+	  let unregistered = 0;
+	  
+	  totalCount = d.count
+	  totalGiven = d.given
+	  totalPending = d.pending
+	  unregistered = d.unregistered
+	  
+      if (totalCount > 0) {
+        document.getElementById("statsCount").innerHTML = `
+		Counts for ${rdepot}: <br/>
+        ✅ Given: <b>${totalGiven}</b> &nbsp; | &nbsp;
+        ⏳ Pending: <b>${totalPending}</b> &nbsp; | &nbsp;
+        📊 Total: <b>${totalCount}</b> &nbsp; | &nbsp;
+        👻 Unregistered: <b>${unregistered}</b>
+      `;
+      } else {
+		document.getElementById("statsCount").innerText = "Unable to load stats";
+	  }
+	  
+	  document.getElementById("results").innerHTML = "";
+
+    })
+	.catch(err => {
+		alert("Network error. Please refresh and try again.");
+		console.error(err);
+	});
+}
+
+function search(page) {
+  
+  document.getElementById("results").innerHTML = `⌛`;
+	
+  currentPage = page;
+  const field = getField();
+  const value = document.getElementById("value").value;
+  const user = document.getElementById("user").value;
+  if (!user) {
+	document.getElementById("results").innerHTML = `
+		  <p style="color: red;">Please enter user email</p>
+		`;
+		return;
+  }
+  
+  const rdepot = document.querySelector('input[name="depot"]:checked')?.value;
+
+  fetch(`${API}?action=search&field=${encodeURIComponent(field)}&value=${encodeURIComponent(value)}&page=${page}&user=${encodeURIComponent(user)}&rdepot=${encodeURIComponent(rdepot)}`)
+    .then(r => r.json())
+    .then(d => {
+		if (d.error === "Unauthorized") {
+		document.body.innerHTML = `
+		  <h2>Access Denied</h2>
+		  <p>You are not authorized to use this app.</p>
+		  <p>Please sign in with an approved Google account.</p>
+		`;
+		return;
+	  }
+		if (d.error === "Missing user email") {
+		document.getElementById("results").innerHTML = `
+		  <p style="color: red;">Please enter user email</p>
+		`;
+		return;
+	  }
+      const box = document.getElementById("results");
+      box.innerHTML = "";
+      lastPage = d.totalPages
+
+      if (!d.results || d.results.length === 0) {
+        box.innerHTML = "<p>No records found</p>";
+        return;
+      }
+
+      d.results.forEach(r => {
+        const given = r.record.Given === true;
+		let depotMatch = false;
+		
+		//if(rdepot === "All") {
+		//	depotMatch = true;
+		//}
+		if ( rdepot && r.record.Depot && rdepot.toLowerCase().includes(r.record.Depot.toLowerCase())) {
+			depotMatch = true;
+		}
+		
+        box.innerHTML += `
+          <div class="card">
+            <b>Depot:</b> ${r.record.Depot}<br>
+            <b>JamaatID/ITS:</b> ${r.record.JamaatID_ITS}<br>
+            <b>Name:</b> ${r.record.Name}<br>
+			<b>BreadType:</b> ${r.record.BreadType}<br>
+            <b>Custom Items:</b> ${r.record.CustomItems}<br>
+            <b>Status:</b> ${given ? "✅ Given" : "❌ Not Given"}<br><br>
+            <button ${given ? "disabled" : (!depotMatch ? "disabled" : "")}
+              onclick="mark(${r.rowIndex})">
+              ${given ? "Already Given" : "Mark Given"}
+            </button>
+          </div>`;
+      });
+
+      renderPager();
+	  
+	  document.getElementById("statsCount").innerHTML = ``;
+
+    })
+	.catch(err => {
+		alert("Network error. Please refresh and try again.");
+		console.error(err);
+	});
+}
+
+function renderPager() {
+  const p = document.getElementById("pager");
+  p.innerHTML = `
+    <button onclick="search(1)" ${currentPage === 1 ? "disabled" : ""}>⏮ First</button>
+    <button onclick="search(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>◀ Prev</button>
+    <span>Page ${currentPage} of ${lastPage}</span>
+    <button onclick="search(${currentPage + 1})" ${currentPage === lastPage ? "disabled" : ""}>Next ▶</button>
+    <button onclick="search(${lastPage})" ${currentPage === lastPage ? "disabled" : ""}>⏭ Last</button>
+  `;
+}
+
+function mark(row) {
+  const user = document.getElementById("user").value.trim();
+  if (!user) {
+	document.getElementById("results").innerHTML = `
+		  <p style="color: red;">Please enter user email</p>
+		`;
+		return;
+  }
+  
+  document.getElementById("results").innerHTML = `⌛`;
+
+  fetch(API, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "markGiven",
+      rowIndex: row,
+      user
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.error) alert(d.error);
+    else {
+      alert("Marked as Given ✔");
+      search(currentPage);
+    }
+  })
+	.catch(err => {
+		alert("Network error. Please refresh and try again.");
+		console.error(err);
+	});
+}
+
+</script>
+
+</body>
+</html>
