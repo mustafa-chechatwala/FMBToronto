@@ -60,7 +60,7 @@ input[type="text"] {
 <fieldset>
     <legend>Select your depot:</legend>
     <div>
-      <input type="radio" id="saifeeMasjid" name="depot" value="Masjid us Saifee - Richmond Hill">
+      <input type="radio" id="saifeeMasjid" name="depot" value="Masjid us Saifee - Richmond Hill" checked>
       <label for="saifeeMasjid">Masjid us Saifee - Richmond Hill</label>
     </div>
     <div>
@@ -80,7 +80,7 @@ input[type="text"] {
       <label for="sudbury">Sudbury</label>
     </div>
     <div>
-      <input type="radio" id="all" name="depot" value="All" checked>
+      <input type="radio" id="all" name="depot" value="All">
       <label for="all">All</label>
     </div>
   </fieldset>
@@ -243,8 +243,8 @@ function search(page) {
             <b>Depot:</b> ${r.record.Depot}<br>
             <b>JamaatID/ITS:</b> ${r.record.JamaatID_ITS}<br>
             <b>Name:</b> ${r.record.Name}<br>
-			<b>BreadType:</b> ${r.record.BreadType}<br>
-            <b>Custom Items:</b> ${r.record.CustomItems}<br>
+			<b>Custom Field 1:</b> ${r.record.CustomField1}<br>
+            <b>Custom Field 2:</b> ${r.record.CustomField2}<br>
             <b>Status:</b> ${given ? "✅ Given" : "❌ Not Given"}<br><br>
             <button ${given ? "disabled" : (!depotMatch ? "disabled" : "")}
               onclick="mark(${r.rowIndex})">
