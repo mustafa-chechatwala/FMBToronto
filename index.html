@@ -243,8 +243,8 @@ function search(page) {
             <b>Depot:</b> ${r.record.Depot}<br>
             <b>JamaatID/ITS:</b> ${r.record.JamaatID_ITS}<br>
             <b>Name:</b> ${r.record.Name}<br>
-			<b>Custom Field 1:</b> ${r.record.CustomField1}<br>
-            <b>Custom Field 2:</b> ${r.record.CustomField2}<br>
+			<b>Small Thaali:</b> ${r.record.CustomField1}<br>
+            <b>Regular Thaali:</b> ${r.record.CustomField2}<br>
             <b>Status:</b> ${given ? "✅ Given" : "❌ Not Given"}<br><br>
             <button ${given ? "disabled" : (!depotMatch ? "disabled" : "")}
               onclick="mark(${r.rowIndex})">
